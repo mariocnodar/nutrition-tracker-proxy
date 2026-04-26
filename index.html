@@ -299,6 +299,11 @@
       </div>
       <div class="cal-target-box" id="calTargetDisplay"></div>
     </div>
+    <div id="calBreakdown" style="display:none;margin-bottom:10px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:#999;line-height:1.8;">
+        <span id="breakdownLine"></span>
+      </div>
+    </div>
     <div class="cal-bar"><div class="cal-bar-fill" id="calBar" style="width:0%"></div></div>
     <div id="deficitBadge" class="deficit-badge neutral" style="display:none"></div>
     <div class="macros">
@@ -725,7 +730,18 @@
     animateNumber('totalFat', Math.round(tFat));
 
     if (goals.cal) {
-      document.getElementById('calTargetDisplay').innerHTML = `<div class="cal-target-number">/ ${goals.cal}</div><div class="cal-target-label">objetivo</div>`;
+      // Show breakdown: objetivo + deporte = total disponible
+      const totalAvailable = goals.cal + totalBurned;
+      const calTargetEl = document.getElementById('calTargetDisplay');
+      calTargetEl.innerHTML = `<div class="cal-target-number">/ ${totalAvailable}</div><div class="cal-target-label">disponibles</div>`;
+
+      // Breakdown line
+      if (totalBurned > 0) {
+        document.getElementById('calBreakdown').style.display = 'block';
+        document.getElementById('breakdownLine').textContent = `${goals.cal} objetivo + ${Math.round(totalBurned)} deporte = ${totalAvailable} kcal`;
+      } else {
+        document.getElementById('calBreakdown').style.display = 'none';
+      }
 
       // Deficit = (basal + burned) - ingested
       const totalOut = (basal || goals.cal) + totalBurned;
@@ -746,10 +762,11 @@
 
     setTimeout(() => {
       if (goals.cal) {
-        const calPct = Math.min((tCal / goals.cal) * 100, 100);
+        const totalAvailable = goals.cal + totalBurned;
+        const calPct = Math.min((tCal / totalAvailable) * 100, 100);
         const calBar = document.getElementById('calBar');
         calBar.style.width = calPct + '%';
-        calBar.className = 'cal-bar-fill' + (tCal > goals.cal ? ' over' : '');
+        calBar.className = 'cal-bar-fill' + (tCal > totalAvailable ? ' over' : '');
         document.getElementById('protBar').style.width = Math.min((tProt / goals.prot) * 100, 100) + '%';
         document.getElementById('carbBar').style.width = Math.min((tCarb / goals.carb) * 100, 100) + '%';
         document.getElementById('fatBar').style.width = Math.min((tFat / goals.fat) * 100, 100) + '%';
