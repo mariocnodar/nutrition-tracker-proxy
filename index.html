@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Cabinet+Grotesk:wght@400;500;700;800;900&display=swap');
- 
+
     :root {
       --bg: #f8f8f6;
       --surface: #ffffff;
@@ -25,16 +25,16 @@
       --fat: #dc2626;
       --cal: #16a34a;
     }
- 
+
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
- 
+
     body {
       background: var(--bg);
       color: var(--text);
       font-family: 'Cabinet Grotesk', sans-serif;
       min-height: 100vh;
     }
- 
+
     .tabs {
       display: flex;
       padding: 56px 20px 0;
@@ -44,7 +44,7 @@
       top: 0;
       z-index: 10;
     }
- 
+
     .tab {
       flex: 1;
       padding: 12px 4px;
@@ -56,12 +56,12 @@
       border-bottom: 2px solid transparent;
       transition: all 0.2s;
     }
- 
+
     .tab.active { color: var(--text); border-bottom-color: var(--text); }
- 
+
     .view { display: none; padding-bottom: 50px; }
     .view.active { display: block; }
- 
+
     /* NAV BAR */
     .nav-bar {
       display: flex;
@@ -71,7 +71,7 @@
       gap: 10px;
       border-bottom: 1px solid var(--border);
     }
- 
+
     .nav-bar button {
       width: 32px; height: 32px;
       border-radius: 8px;
@@ -83,9 +83,9 @@
       flex-shrink: 0;
       transition: all 0.15s;
     }
- 
+
     .nav-bar button:active { transform: scale(0.92); }
- 
+
     .nav-label {
       flex: 1;
       text-align: center;
@@ -94,13 +94,13 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
- 
+
     .nav-label.today { color: var(--green); font-weight: 500; }
- 
+
     .refresh-btn { flex-shrink: 0; }
     .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
- 
+
     /* SUMMARY CARD */
     .summary-card {
       margin: 16px 20px;
@@ -109,22 +109,22 @@
       border-radius: 16px;
       padding: 20px;
     }
- 
+
     .cal-row {
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
       margin-bottom: 16px;
     }
- 
+
     .cal-left {}
- 
+
     .cal-display {
       display: flex;
       align-items: baseline;
       gap: 5px;
     }
- 
+
     .cal-number {
       font-size: 48px;
       font-weight: 900;
@@ -132,37 +132,37 @@
       color: var(--cal);
       line-height: 1;
     }
- 
+
     .cal-unit {
       font-family: 'DM Mono', monospace;
       font-size: 11px;
       color: var(--muted);
     }
- 
+
     .cal-label {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
       color: var(--muted);
       margin-top: 2px;
     }
- 
+
     .cal-target {
       text-align: right;
     }
- 
+
     .cal-target-number {
       font-size: 14px;
       font-weight: 800;
       color: var(--muted);
     }
- 
+
     .cal-target-label {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
       color: var(--muted);
       text-transform: uppercase;
     }
- 
+
     /* CAL PROGRESS BAR */
     .cal-bar {
       height: 6px;
@@ -171,78 +171,80 @@
       overflow: hidden;
       margin-bottom: 18px;
     }
- 
+
     .cal-bar-fill {
       height: 100%;
       background: var(--cal);
       border-radius: 4px;
       transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
- 
+
     .cal-bar-fill.over { background: var(--fat); }
- 
+
     /* MACROS */
     .macros { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
- 
+
     .macro-item { display: flex; flex-direction: column; gap: 4px; }
- 
+
     .macro-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
     }
- 
+
     .macro-label {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
- 
+
     .macro-target-text {
       font-family: 'DM Mono', monospace;
       font-size: 8px;
       color: var(--muted);
+      display: none;
     }
- 
+
     .macro-value {
       font-size: 22px;
       font-weight: 900;
       letter-spacing: -0.5px;
       line-height: 1;
     }
- 
+
     .macro-bar {
       height: 3px;
       background: var(--border);
       border-radius: 2px;
       overflow: hidden;
     }
- 
+
     .macro-bar-fill {
       height: 100%;
       border-radius: 2px;
       transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
- 
+
     .macro-item.protein .macro-label,
     .macro-item.protein .macro-value { color: var(--protein); }
     .macro-item.protein .macro-bar-fill { background: var(--protein); }
- 
+
     .macro-item.carbs .macro-label,
     .macro-item.carbs .macro-value { color: var(--carbs); }
     .macro-item.carbs .macro-bar-fill { background: var(--carbs); }
- 
+
     .macro-item.fat .macro-label,
     .macro-item.fat .macro-value { color: var(--fat); }
     .macro-item.fat .macro-bar-fill { background: var(--fat); }
- 
+
     .macro-progress-text {
       font-family: 'DM Mono', monospace;
-      font-size: 9px;
+      font-size: 11px;
+      font-weight: 500;
       color: var(--muted);
     }
- 
+
     /* ENTRIES */
     .section-title {
       padding: 4px 20px 10px;
@@ -254,15 +256,15 @@
       display: flex;
       justify-content: space-between;
     }
- 
+
     .entry-count {
       background: var(--surface2);
       border-radius: 20px;
       padding: 2px 8px;
     }
- 
+
     .entries { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; }
- 
+
     .entry-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -272,9 +274,9 @@
       justify-content: space-between;
       align-items: center;
     }
- 
+
     .entry-left { flex: 1; min-width: 0; }
- 
+
     .entry-name {
       font-size: 14px;
       font-weight: 700;
@@ -283,21 +285,21 @@
       text-overflow: ellipsis;
       margin-bottom: 4px;
     }
- 
+
     .entry-macros-row { display: flex; gap: 10px; }
- 
+
     .entry-macro {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
       color: var(--muted);
     }
- 
+
     .entry-macro.p span { color: var(--protein); font-weight: 500; }
     .entry-macro.c span { color: var(--carbs); font-weight: 500; }
     .entry-macro.f span { color: var(--fat); font-weight: 500; }
- 
+
     .entry-cal { text-align: right; flex-shrink: 0; margin-left: 12px; }
- 
+
     .entry-cal-number {
       font-size: 20px;
       font-weight: 900;
@@ -305,14 +307,14 @@
       color: var(--cal);
       line-height: 1;
     }
- 
+
     .entry-cal-label {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
       color: var(--muted);
       text-transform: uppercase;
     }
- 
+
     /* ===== WEEKLY ===== */
     .week-summary {
       margin: 16px 20px;
@@ -321,12 +323,12 @@
       border-radius: 16px;
       overflow: hidden;
     }
- 
+
     .week-header {
       padding: 16px 20px 12px;
       border-bottom: 1px solid var(--border);
     }
- 
+
     .week-header-title {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -335,29 +337,29 @@
       color: var(--muted);
       margin-bottom: 12px;
     }
- 
+
     .week-totals {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 8px;
     }
- 
+
     .week-total-item { text-align: center; }
- 
+
     .week-total-value {
       font-size: 18px;
       font-weight: 900;
       letter-spacing: -0.5px;
       line-height: 1;
     }
- 
+
     .week-total-target {
       font-family: 'DM Mono', monospace;
       font-size: 8px;
       color: var(--muted);
       margin-top: 1px;
     }
- 
+
     .week-total-label {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
@@ -365,23 +367,23 @@
       text-transform: uppercase;
       margin-top: 2px;
     }
- 
+
     .week-total-item.cal .week-total-value { color: var(--cal); }
     .week-total-item.prot .week-total-value { color: var(--protein); }
     .week-total-item.carb .week-total-value { color: var(--carbs); }
     .week-total-item.fat .week-total-value { color: var(--fat); }
- 
+
     .day-bars { padding: 14px 20px; }
- 
+
     .day-bar-row {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 10px;
     }
- 
+
     .day-bar-row:last-child { margin-bottom: 0; }
- 
+
     .day-bar-label {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -390,9 +392,9 @@
       width: 28px;
       flex-shrink: 0;
     }
- 
+
     .day-bar-label.today-label { color: var(--green); font-weight: 500; }
- 
+
     .day-bar-track {
       flex: 1;
       height: 26px;
@@ -401,7 +403,7 @@
       overflow: hidden;
       position: relative;
     }
- 
+
     /* target line */
     .day-bar-target-line {
       position: absolute;
@@ -411,7 +413,7 @@
       background: rgba(0,0,0,0.15);
       z-index: 2;
     }
- 
+
     .day-bar-fill {
       height: 100%;
       border-radius: 6px;
@@ -420,7 +422,7 @@
       padding-left: 8px;
       transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
- 
+
     .day-bar-text {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -429,9 +431,9 @@
       opacity: 0;
       transition: opacity 0.3s 0.5s;
     }
- 
+
     .day-bar-fill.show .day-bar-text { opacity: 1; }
- 
+
     .day-bar-prot {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -440,7 +442,7 @@
       text-align: right;
       flex-shrink: 0;
     }
- 
+
     .section-label {
       padding: 4px 20px 10px;
       font-family: 'DM Mono', monospace;
@@ -449,21 +451,21 @@
       letter-spacing: 1.5px;
       color: var(--muted);
     }
- 
+
     .macro-week-grid {
       margin: 0 20px 16px;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
     }
- 
+
     .macro-week-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 14px 12px;
     }
- 
+
     .macro-week-title {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
@@ -471,31 +473,31 @@
       letter-spacing: 0.5px;
       margin-bottom: 6px;
     }
- 
+
     .macro-week-avg {
       font-size: 20px;
       font-weight: 900;
       letter-spacing: -0.5px;
       line-height: 1;
     }
- 
+
     .macro-week-target {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
       color: var(--muted);
       margin-top: 2px;
     }
- 
+
     .macro-week-card.prot .macro-week-title,
     .macro-week-card.prot .macro-week-avg { color: var(--protein); }
     .macro-week-card.carb .macro-week-title,
     .macro-week-card.carb .macro-week-avg { color: var(--carbs); }
     .macro-week-card.fat .macro-week-title,
     .macro-week-card.fat .macro-week-avg { color: var(--fat); }
- 
+
     /* ===== SETTINGS ===== */
     .settings-wrap { padding: 16px 20px 40px; }
- 
+
     .settings-section {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -503,7 +505,7 @@
       overflow: hidden;
       margin-bottom: 16px;
     }
- 
+
     .settings-section-title {
       padding: 14px 16px 10px;
       font-family: 'DM Mono', monospace;
@@ -513,7 +515,7 @@
       color: var(--muted);
       border-bottom: 1px solid var(--border);
     }
- 
+
     .settings-row {
       display: flex;
       align-items: center;
@@ -521,22 +523,22 @@
       border-bottom: 1px solid var(--border);
       gap: 12px;
     }
- 
+
     .settings-row:last-child { border-bottom: none; }
- 
+
     .settings-row-label {
       flex: 1;
       font-size: 14px;
       font-weight: 600;
     }
- 
+
     .settings-row-sub {
       font-size: 11px;
       color: var(--muted);
       margin-top: 1px;
       font-family: 'DM Mono', monospace;
     }
- 
+
     .settings-input {
       width: 80px;
       text-align: right;
@@ -550,9 +552,9 @@
       color: var(--text);
       outline: none;
     }
- 
+
     .settings-input:focus { border-color: var(--text); }
- 
+
     .settings-select {
       padding: 6px 10px;
       border: 1px solid var(--border);
@@ -565,7 +567,7 @@
       outline: none;
       cursor: pointer;
     }
- 
+
     /* OBJETIVOS RESULT */
     .goals-card {
       background: var(--surface);
@@ -574,7 +576,7 @@
       padding: 20px;
       margin-bottom: 16px;
     }
- 
+
     .goals-title {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -583,14 +585,14 @@
       color: var(--muted);
       margin-bottom: 14px;
     }
- 
+
     .goals-cal {
       display: flex;
       align-items: baseline;
       gap: 5px;
       margin-bottom: 4px;
     }
- 
+
     .goals-cal-number {
       font-size: 40px;
       font-weight: 900;
@@ -598,40 +600,40 @@
       color: var(--cal);
       line-height: 1;
     }
- 
+
     .goals-cal-unit {
       font-family: 'DM Mono', monospace;
       font-size: 11px;
       color: var(--muted);
     }
- 
+
     .goals-cal-label {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
       color: var(--muted);
       margin-bottom: 16px;
     }
- 
+
     .goals-macros {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
     }
- 
+
     .goals-macro {
       background: var(--bg);
       border-radius: 10px;
       padding: 12px 10px;
       text-align: center;
     }
- 
+
     .goals-macro-value {
       font-size: 22px;
       font-weight: 900;
       letter-spacing: -0.5px;
       line-height: 1;
     }
- 
+
     .goals-macro-label {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
@@ -639,11 +641,11 @@
       color: var(--muted);
       margin-top: 3px;
     }
- 
+
     .goals-macro.prot .goals-macro-value { color: var(--protein); }
     .goals-macro.carb .goals-macro-value { color: var(--carbs); }
     .goals-macro.fat .goals-macro-value { color: var(--fat); }
- 
+
     .save-btn {
       width: 100%;
       padding: 14px;
@@ -657,9 +659,9 @@
       cursor: pointer;
       transition: all 0.15s;
     }
- 
+
     .save-btn:active { transform: scale(0.98); opacity: 0.9; }
- 
+
     .save-confirm {
       text-align: center;
       font-family: 'DM Mono', monospace;
@@ -668,12 +670,12 @@
       padding: 8px;
       display: none;
     }
- 
+
     /* EMPTY / LOADING / ERROR */
     .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
     .empty-icon { font-size: 36px; margin-bottom: 10px; }
     .empty-text { font-size: 13px; font-family: 'DM Mono', monospace; }
- 
+
     .loading { display: flex; justify-content: center; padding: 40px; }
     .loading-dots { display: flex; gap: 6px; }
     .loading-dots span {
@@ -688,7 +690,7 @@
       0%, 80%, 100% { transform: scale(0.6); opacity: 0.2; }
       40% { transform: scale(1); opacity: 1; }
     }
- 
+
     .error-msg {
       margin: 0 20px;
       padding: 14px 16px;
@@ -702,13 +704,13 @@
   </style>
 </head>
 <body>
- 
+
 <div class="tabs">
   <div class="tab active" onclick="switchTab('daily')">Hoy</div>
   <div class="tab" onclick="switchTab('weekly')">Semana</div>
   <div class="tab" onclick="switchTab('settings')">Ajustes</div>
 </div>
- 
+
 <!-- ===== DAILY ===== -->
 <div class="view active" id="view-daily">
   <div class="nav-bar">
@@ -726,7 +728,7 @@
       </svg>
     </button>
   </div>
- 
+
   <div class="summary-card">
     <div class="cal-row">
       <div class="cal-left">
@@ -769,14 +771,14 @@
       </div>
     </div>
   </div>
- 
+
   <div class="section-title">
     <span>Entradas</span>
     <span class="entry-count" id="entryCount">0</span>
   </div>
   <div id="daily-content" class="entries"></div>
 </div>
- 
+
 <!-- ===== WEEKLY ===== -->
 <div class="view" id="view-weekly">
   <div class="nav-bar">
@@ -796,13 +798,13 @@
   </div>
   <div id="weekly-content"></div>
 </div>
- 
+
 <!-- ===== SETTINGS ===== -->
 <div class="view" id="view-settings">
   <div class="settings-wrap">
- 
+
     <div id="goals-card-wrap"></div>
- 
+
     <div class="settings-section">
       <div class="settings-section-title">Tu cuerpo</div>
       <div class="settings-row">
@@ -825,7 +827,7 @@
         </select>
       </div>
     </div>
- 
+
     <div class="settings-section">
       <div class="settings-section-title">Actividad y objetivo</div>
       <div class="settings-row">
@@ -847,20 +849,20 @@
         </select>
       </div>
     </div>
- 
+
     <button class="save-btn" onclick="saveSettings()">Guardar objetivos</button>
     <div class="save-confirm" id="saveConfirm">✓ Objetivos guardados</div>
- 
+
   </div>
 </div>
- 
+
 <script>
   const PROXY_URL = 'https://nutrition-tracker-proxy.vercel.app/api/notion';
- 
+
   let currentDate = new Date();
   let currentWeekOffset = 0;
   let goals = { cal: 0, prot: 0, carb: 0, fat: 0 };
- 
+
   // ===== STORAGE =====
   function loadSettings() {
     try {
@@ -874,7 +876,7 @@
       if (s.goals) goals = s.goals;
     } catch(e) {}
   }
- 
+
   function saveSettings() {
     const s = getSettingsValues();
     s.goals = goals;
@@ -883,7 +885,7 @@
     c.style.display = 'block';
     setTimeout(() => { c.style.display = 'none'; }, 2000);
   }
- 
+
   function getSettingsValues() {
     return {
       weight: parseFloat(document.getElementById('s-weight').value) || 0,
@@ -894,7 +896,7 @@
       goal: document.getElementById('s-goal').value
     };
   }
- 
+
   // ===== GOALS CALC =====
   function recalcGoals() {
     const s = getSettingsValues();
@@ -902,7 +904,7 @@
       document.getElementById('goals-card-wrap').innerHTML = '';
       return;
     }
- 
+
     // Mifflin-St Jeor BMR
     let bmr;
     if (s.sex === 'm') {
@@ -910,15 +912,15 @@
     } else {
       bmr = 10 * s.weight + 6.25 * s.height - 5 * s.age - 161;
     }
- 
+
     let tdee = bmr * s.activity;
- 
+
     // Adjust for goal
     let targetCal;
     if (s.goal === 'cut') targetCal = Math.round(tdee * 0.8);
     else if (s.goal === 'bulk') targetCal = Math.round(tdee * 1.1);
     else targetCal = Math.round(tdee);
- 
+
     // Macros
     let protG, fatG, carbG;
     if (s.goal === 'cut') {
@@ -934,11 +936,11 @@
       fatG = Math.round(s.weight * 0.9);
       carbG = Math.round((targetCal - protG * 4 - fatG * 9) / 4);
     }
- 
+
     carbG = Math.max(carbG, 50);
- 
+
     goals = { cal: targetCal, prot: protG, carb: carbG, fat: fatG };
- 
+
     // Render goals card
     const goalLabels = { cut: 'Perder grasa', maintain: 'Mantener', bulk: 'Ganar músculo' };
     document.getElementById('goals-card-wrap').innerHTML = `
@@ -965,7 +967,7 @@
         </div>
       </div>`;
   }
- 
+
   // ===== TABS =====
   function switchTab(tab) {
     document.querySelectorAll('.tab').forEach((t, i) => {
@@ -976,11 +978,11 @@
     if (tab === 'weekly') loadWeekly();
     if (tab === 'settings') recalcGoals();
   }
- 
+
   // ===== UTILS =====
   function formatDateISO(date) { return date.toISOString().split('T')[0]; }
   function isToday(date) { return formatDateISO(date) === formatDateISO(new Date()); }
- 
+
   function getProp(props, name) {
     const p = props[name];
     if (!p) return 0;
@@ -989,7 +991,7 @@
     if (p.type === 'date') return p.date?.start || '';
     return 0;
   }
- 
+
   function animateNumber(id, target) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1003,7 +1005,7 @@
     }
     requestAnimationFrame(update);
   }
- 
+
   function updateTargetUI() {
     if (!goals.cal) {
       document.getElementById('calTargetDisplay').innerHTML = '';
@@ -1020,7 +1022,7 @@
     document.getElementById('carbTarget').textContent = `/ ${goals.carb}g`;
     document.getElementById('fatTarget').textContent = `/ ${goals.fat}g`;
   }
- 
+
   // ===== DAILY =====
   function updateDateUI() {
     const el = document.getElementById('dateDisplay');
@@ -1032,23 +1034,23 @@
       el.className = 'nav-label';
     }
   }
- 
+
   function changeDay(d) {
     currentDate = new Date(currentDate);
     currentDate.setDate(currentDate.getDate() + d);
     updateDateUI();
     loadDaily();
   }
- 
+
   function goToday() { currentDate = new Date(); updateDateUI(); loadDaily(); }
- 
+
   async function loadDaily() {
     const content = document.getElementById('daily-content');
     const btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
     content.innerHTML = '<div class="loading"><div class="loading-dots"><span></span><span></span><span></span></div></div>';
     updateTargetUI();
- 
+
     ['totalCal','totalProt','totalCarb','totalFat'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = '0';
@@ -1062,7 +1064,7 @@
       if (el) el.textContent = '';
     });
     document.getElementById('entryCount').textContent = '0';
- 
+
     try {
       const res = await fetch(PROXY_URL, {
         method: 'POST',
@@ -1081,17 +1083,23 @@
       btn.classList.remove('spinning');
     }
   }
- 
+
   function renderDaily(entries) {
     const content = document.getElementById('daily-content');
- 
+
     if (!entries.length) {
       content.innerHTML = `<div class="empty"><div class="empty-icon">🍽️</div><div class="empty-text">Sin registros</div></div>`;
+      // Still show targets if set
+      if (goals.prot) {
+        document.getElementById('protProgress').textContent = `0g / ${goals.prot}g`;
+        document.getElementById('carbProgress').textContent = `0g / ${goals.carb}g`;
+        document.getElementById('fatProgress').textContent = `0g / ${goals.fat}g`;
+      }
       return;
     }
- 
+
     let tCal = 0, tProt = 0, tCarb = 0, tFat = 0;
- 
+
     const html = entries.map(e => {
       const p = e.properties;
       const name = getProp(p, 'Concepto') || 'Sin nombre';
@@ -1115,41 +1123,40 @@
         </div>
       </div>`;
     }).join('');
- 
+
     content.innerHTML = html;
     document.getElementById('entryCount').textContent = entries.length;
- 
+
     animateNumber('totalCal', Math.round(tCal));
     animateNumber('totalProt', Math.round(tProt));
     animateNumber('totalCarb', Math.round(tCarb));
     animateNumber('totalFat', Math.round(tFat));
- 
+
     setTimeout(() => {
       if (goals.cal) {
         const calPct = Math.min((tCal / goals.cal) * 100, 100);
         const calBar = document.getElementById('calBar');
         calBar.style.width = calPct + '%';
         calBar.className = 'cal-bar-fill' + (tCal > goals.cal ? ' over' : '');
- 
+
         const protPct = Math.min((tProt / goals.prot) * 100, 100);
         const carbPct = Math.min((tCarb / goals.carb) * 100, 100);
         const fatPct = Math.min((tFat / goals.fat) * 100, 100);
- 
+
         document.getElementById('protBar').style.width = protPct + '%';
         document.getElementById('carbBar').style.width = carbPct + '%';
         document.getElementById('fatBar').style.width = fatPct + '%';
- 
+
         document.getElementById('protProgress').textContent = `${Math.round(tProt)}g / ${goals.prot}g`;
         document.getElementById('carbProgress').textContent = `${Math.round(tCarb)}g / ${goals.carb}g`;
-        document.getElementById('fatProgress').textContent = `${Math.round(tFat)}g / ${goals.fat}g`;
-      } else {
+        document.getElementById('fatProgress').textContent = `${Math.round(tFat)}g / ${goals.fat}g`;      } else {
         document.getElementById('protBar').style.width = Math.min((tProt / 150) * 100, 100) + '%';
         document.getElementById('carbBar').style.width = Math.min((tCarb / 250) * 100, 100) + '%';
         document.getElementById('fatBar').style.width = Math.min((tFat / 65) * 100, 100) + '%';
       }
     }, 100);
   }
- 
+
   // ===== WEEKLY =====
   function getWeekDates(offset = 0) {
     const today = new Date();
@@ -1162,25 +1169,25 @@
       return d;
     });
   }
- 
+
   function updateWeekUI() {
     const days = getWeekDates(currentWeekOffset);
     const s = days[0].toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
     const e = days[6].toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
     document.getElementById('weekDisplay').textContent = `${s} – ${e}`;
   }
- 
+
   function changeWeek(d) { currentWeekOffset += d; updateWeekUI(); loadWeekly(); }
- 
+
   async function loadWeekly() {
     updateWeekUI();
     const content = document.getElementById('weekly-content');
     const btn = document.getElementById('weekRefreshBtn');
     btn.classList.add('spinning');
     content.innerHTML = '<div class="loading"><div class="loading-dots"><span></span><span></span><span></span></div></div>';
- 
+
     const days = getWeekDates(currentWeekOffset);
- 
+
     try {
       const res = await fetch(PROXY_URL, {
         method: 'POST',
@@ -1204,15 +1211,15 @@
       btn.classList.remove('spinning');
     }
   }
- 
+
   function renderWeekly(entries, days) {
     const content = document.getElementById('weekly-content');
     const todayISO = formatDateISO(new Date());
     const DAY_NAMES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
- 
+
     const byDay = {};
     days.forEach(d => { byDay[formatDateISO(d)] = { cal: 0, prot: 0, carb: 0, fat: 0 }; });
- 
+
     entries.forEach(e => {
       const p = e.properties;
       const fecha = getProp(p, 'Fecha');
@@ -1224,7 +1231,7 @@
         byDay[key].fat += getProp(p, 'Grasas') || 0;
       }
     });
- 
+
     const vals = Object.values(byDay);
     const daysWithData = vals.filter(d => d.cal > 0);
     const count = daysWithData.length || 1;
@@ -1236,12 +1243,12 @@
     const avgProt = Math.round(tProt / count);
     const avgCarb = Math.round(tCarb / count);
     const avgFat = Math.round(tFat / count);
- 
+
     const maxCal = Math.max(...vals.map(d => d.cal), goals.cal || 1, 1);
- 
+
     // Target line pct
     const targetLinePct = goals.cal ? Math.min((goals.cal / (maxCal * 1.1)) * 100, 95) : null;
- 
+
     const barsHTML = days.map((day, i) => {
       const iso = formatDateISO(day);
       const d = byDay[iso];
@@ -1249,7 +1256,7 @@
       const isT = iso === todayISO;
       const color = d.cal > (goals.cal || 99999) ? '#dc2626' : (isT ? '#16a34a' : '#1a1a1a');
       const targetLine = targetLinePct ? `<div class="day-bar-target-line" style="left:${targetLinePct}%"></div>` : '';
- 
+
       return `<div class="day-bar-row">
         <div class="day-bar-label ${isT ? 'today-label' : ''}">${DAY_NAMES[i]}</div>
         <div class="day-bar-track">
@@ -1261,12 +1268,12 @@
         <div class="day-bar-prot">${d.prot > 0 ? Math.round(d.prot) + 'g' : '—'}</div>
       </div>`;
     }).join('');
- 
+
     const calTargetText = goals.cal ? `/ ${goals.cal}` : '';
     const protTargetText = goals.prot ? `/ ${goals.prot}g obj` : 'total';
     const carbTargetText = goals.carb ? `/ ${goals.carb}g obj` : 'total';
     const fatTargetText = goals.fat ? `/ ${goals.fat}g obj` : 'total';
- 
+
     content.innerHTML = `
       <div class="week-summary">
         <div class="week-header">
@@ -1296,7 +1303,7 @@
         </div>
         <div class="day-bars">${barsHTML}</div>
       </div>
- 
+
       <div class="section-label">Totales semanales</div>
       <div class="macro-week-grid">
         <div class="macro-week-card prot">
@@ -1316,7 +1323,7 @@
         </div>
       </div>`;
   }
- 
+
   // ===== INIT =====
   loadSettings();
   recalcGoals();
@@ -1325,4 +1332,3 @@
 </script>
 </body>
 </html>
- 
