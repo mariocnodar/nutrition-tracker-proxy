@@ -139,12 +139,12 @@
     }
     .cal-weekday { text-align: center; font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase; color: var(--muted); padding: 4px 0; }
 
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 16px; }
 
     .cal-day {
       aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; cursor: pointer;
-      position: relative; transition: all 0.15s; padding: 2px;
+      position: relative; transition: all 0.15s; padding: 2px; min-height: 0;
     }
     .cal-day.empty { cursor: default; }
     .cal-day.today { border: 2px solid var(--text); }
@@ -622,23 +622,25 @@
     document.getElementById('calTargetDisplay').innerHTML = '';
     document.getElementById('deficitBadge').style.display = 'none';
 
+    const dateFilter = { filter: { property: 'Fecha', date: { equals: formatDateISO(currentDate) } }, sorts: [{ property: 'Fecha', direction: 'ascending' }] };
+
     try {
-      const res = await fetch(PROXY_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filter: { property: 'Fecha', date: { equals: formatDateISO(currentDate) } }, sorts: [{ property: 'Fecha', direction: 'ascending' }] })
-      });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data = await res.json();
-      renderDaily(data.results || []);
+      const [nutritionRes, sportRes] = await Promise.all([
+        fetch(PROXY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ db: 'nutrition', ...dateFilter }) }),
+        fetch(PROXY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ db: 'sport', ...dateFilter }) })
+      ]);
+      const nutritionData = await nutritionRes.json();
+      const sportData = await sportRes.json();
+      renderDaily(nutritionData.results || [], sportData.results || []);
     } catch (err) {
       content.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
     } finally { btn.classList.remove('spinning'); }
   }
 
-  function renderDaily(entries) {
+  function renderDaily(nutritionEntries, sportEntries) {
     const content = document.getElementById('daily-content');
 
-    if (!entries.length) {
+    if (!nutritionEntries.length && !sportEntries.length) {
       content.innerHTML = `<div class="empty"><div class="empty-icon">🍽️</div><div class="empty-text">Sin registros</div></div>`;
       if (goals.prot) {
         document.getElementById('protProgress').textContent = `0 / ${goals.prot}g`;
@@ -652,8 +654,10 @@
     }
 
     let tCal = 0, tProt = 0, tCarb = 0, tFat = 0;
+    let totalBurned = 0;
 
-    const html = entries.map(e => {
+    // Nutrition entries
+    const nutritionHTML = nutritionEntries.map(e => {
       const p = e.properties;
       const name = getProp(p, 'Concepto') || 'Sin nombre';
       const cal = getCal(p);
@@ -674,8 +678,39 @@
       </div>`;
     }).join('');
 
+    // Sport entries
+    const sportHTML = sportEntries.map(e => {
+      const p = e.properties;
+      const name = getProp(p, 'Actividad') || 'Actividad';
+      const burned = (() => {
+        const keys = Object.keys(p);
+        for (const k of keys) {
+          if (k.toLowerCase().includes('calor') && p[k].type === 'number') return p[k].number || 0;
+        }
+        return 0;
+      })();
+      totalBurned += burned;
+      return `<div class="entry-card" style="border-left: 3px solid #16a34a;">
+        <div class="entry-left">
+          <div class="entry-name">🏃 ${name}</div>
+          <div class="entry-macros-row">
+            <div class="entry-macro" style="color:#16a34a"><span style="color:#16a34a;font-weight:600">${Math.round(burned)}</span> kcal quemadas</div>
+          </div>
+        </div>
+        <div class="entry-cal"><div class="entry-cal-number" style="color:#16a34a">-${Math.round(burned)}</div><div class="entry-cal-label">kcal</div></div>
+      </div>`;
+    }).join('');
+
+    // Section headers
+    let html = '';
+    if (nutritionEntries.length) html += nutritionHTML;
+    if (sportEntries.length) {
+      if (nutritionEntries.length) html += `<div style="padding:8px 0 4px;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#999">Deporte</div>`;
+      html += sportHTML;
+    }
+
     content.innerHTML = html;
-    document.getElementById('entryCount').textContent = entries.length;
+    document.getElementById('entryCount').textContent = nutritionEntries.length + sportEntries.length;
 
     animateNumber('totalCal', Math.round(tCal));
     animateNumber('totalProt', Math.round(tProt));
@@ -685,12 +720,14 @@
     if (goals.cal) {
       document.getElementById('calTargetDisplay').innerHTML = `<div class="cal-target-number">/ ${goals.cal}</div><div class="cal-target-label">objetivo</div>`;
 
-      const deficit = goals.cal - Math.round(tCal);
+      // Deficit = (basal + burned) - ingested
+      const totalOut = (basal || goals.cal) + totalBurned;
+      const deficit = Math.round(totalOut - tCal);
       const badge = document.getElementById('deficitBadge');
       badge.style.display = 'inline-flex';
       if (deficit > 0) {
         badge.className = 'deficit-badge deficit';
-        badge.textContent = `↓ ${deficit} kcal déficit`;
+        badge.textContent = `↓ ${deficit} kcal déficit${totalBurned > 0 ? ' (incl. deporte)' : ''}`;
       } else if (deficit < 0) {
         badge.className = 'deficit-badge surplus';
         badge.textContent = `↑ ${Math.abs(deficit)} kcal superávit`;
@@ -698,19 +735,6 @@
         badge.className = 'deficit-badge neutral';
         badge.textContent = 'En objetivo';
       }
-
-      // Save to weekly history
-      const weekKey = getWeekKey(currentDate);
-      const isoKey = formatDateISO(currentDate);
-      if (!weeklyHistory[weekKey]) weeklyHistory[weekKey] = {};
-      weeklyHistory[weekKey][isoKey] = deficit;
-
-      // Auto-save weekly history
-      try {
-        const s = JSON.parse(localStorage.getItem('nutrition_settings') || '{}');
-        s.weeklyHistory = weeklyHistory;
-        localStorage.setItem('nutrition_settings', JSON.stringify(s));
-      } catch(e) {}
     }
 
     setTimeout(() => {
