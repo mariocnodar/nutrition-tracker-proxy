@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Nutrición">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Nutrition Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cabinet+Grotesk:wght@400;500;700;800;900&display=swap');
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: #222222;
+      --text: #f0f0f0;
+      --muted: #555555;
+      --accent: #c8f542;
+      --accent2: #42f5a7;
+      --accent3: #f5a742;
+      --protein: #4287f5;
+      --carbs: #f5a742;
+      --fat: #f54290;
+      --cal: #c8f542;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cabinet Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 56px 20px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .header-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .header-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .refresh-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:active { transform: scale(0.9); background: var(--surface2); }
+    .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* DATE SELECTOR */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px 20px;
+    }
+
+    .date-nav button {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .date-nav button:active { transform: scale(0.9); }
+
+    .date-display {
+      flex: 1;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .date-display.today { color: var(--accent); }
+
+    /* SUMMARY CARD */
+    .summary-card {
+      margin: 0 20px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(200,245,66,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cal-display {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .cal-number {
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: -3px;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .cal-unit {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .cal-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* MACRO BARS */
+    .macros {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .macro-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .macro-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .macro-value {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .macro-unit {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .macro-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .macro-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .macro-item.protein .macro-label,
+    .macro-item.protein .macro-value { color: var(--protein); }
+    .macro-item.protein .macro-bar-fill { background: var(--protein); }
+
+    .macro-item.carbs .macro-label,
+    .macro-item.carbs .macro-value { color: var(--carbs); }
+    .macro-item.carbs .macro-bar-fill { background: var(--carbs); }
+
+    .macro-item.fat .macro-label,
+    .macro-item.fat .macro-value { color: var(--fat); }
+    .macro-item.fat .macro-bar-fill { background: var(--fat); }
+
+    /* SECTION TITLE */
+    .section-title {
+      padding: 4px 20px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .entry-count {
+      background: var(--surface2);
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 10px;
+    }
+
+    /* ENTRIES */
+    .entries {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 100px;
+    }
+
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideIn 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 14px 0 0 14px;
+    }
+
+    .entry-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .entry-name {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .entry-macros-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .entry-macro {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .entry-macro span {
+      font-size: 10px;
+    }
+
+    .entry-macro.p span { color: var(--protein); }
+    .entry-macro.c span { color: var(--carbs); }
+    .entry-macro.f span { color: var(--fat); }
+
+    .entry-cal {
+      text-align: right;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+
+    .entry-cal-number {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .entry-cal-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .entry-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* EMPTY STATE */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .empty-text {
+      font-size: 14px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* LOADING */
+    .loading {
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .loading-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: bounce 1.2s infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ERROR */
+    .error-msg {
+      margin: 0 20px;
+      padding: 14px 16px;
+      background: rgba(245, 66, 66, 0.1);
+      border: 1px solid rgba(245, 66, 66, 0.3);
+      border-radius: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #f54242;
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 20px 32px;
+      background: linear-gradient(to top, var(--bg) 60%, transparent);
+    }
+
+    .today-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: -0.3px;
+      transition: all 0.15s;
+    }
+
+    .today-btn:active { transform: scale(0.98); }
+    .today-btn.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Nutrición 🥗</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+      <path d="M21 3v5h-5"/>
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+      <path d="M8 16H3v5"/>
+    </svg>
+  </button>
+</div>
+
+<div class="date-nav">
+  <button onclick="changeDay(-1)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="date-display today" id="dateDisplay" onclick="goToday()"></div>
+  <button onclick="changeDay(1)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<div class="summary-card">
+  <div class="cal-display">
+    <div class="cal-number" id="totalCal">0</div>
+    <div class="cal-unit">kcal</div>
+  </div>
+  <div class="cal-label">calorías totales del día</div>
+  <div class="macros">
+    <div class="macro-item protein">
+      <div class="macro-label">Proteínas</div>
+      <div><span class="macro-value" id="totalProt">0</span><span class="macro-unit">g</span></div>
+      <div class="macro-bar"><div class="macro-bar-fill" id="protBar" style="width:0%"></div></div>
+    </div>
+    <div class="macro-item carbs">
+      <div class="macro-label">Carbos</div>
+      <div><span class="macro-value" id="totalCarb">0</span><span class="macro-unit">g</span></div>
+      <div class="macro-bar"><div class="macro-bar-fill" id="carbBar" style="width:0%"></div></div>
+    </div>
+    <div class="macro-item fat">
+      <div class="macro-label">Grasas</div>
+      <div><span class="macro-value" id="totalFat">0</span><span class="macro-unit">g</span></div>
+      <div class="macro-bar"><div class="macro-bar-fill" id="fatBar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">
+  <span>Entradas</span>
+  <span class="entry-count" id="entryCount">0</span>
+</div>
+
+<div id="content" class="entries"></div>
+
+<div class="bottom-nav">
+  <button class="today-btn hidden" id="todayBtn" onclick="goToday()">Ir a hoy</button>
+</div>
+
+<script>
+  const PROXY_URL = 'https://nutrition-tracker-proxy.vercel.app/api/notion';
+  
+  let currentDate = new Date();
+  let allEntries = [];
+
+  function formatDate(date) {
+    return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  function formatDateISO(date) {
+    return date.toISOString().split('T')[0];
+  }
+
+  function isToday(date) {
+    const today = new Date();
+    return formatDateISO(date) === formatDateISO(today);
+  }
+
+  function updateDateUI() {
+    const display = document.getElementById('dateDisplay');
+    const headerDate = document.getElementById('headerDate');
+    const todayBtn = document.getElementById('todayBtn');
+
+    if (isToday(currentDate)) {
+      display.textContent = 'Hoy';
+      display.className = 'date-display today';
+      todayBtn.classList.add('hidden');
+    } else {
+      display.textContent = formatDate(currentDate);
+      display.className = 'date-display';
+      todayBtn.classList.remove('hidden');
+    }
+
+    headerDate.textContent = formatDate(currentDate);
+  }
+
+  function changeDay(delta) {
+    currentDate = new Date(currentDate);
+    currentDate.setDate(currentDate.getDate() + delta);
+    updateDateUI();
+    loadData();
+  }
+
+  function goToday() {
+    currentDate = new Date();
+    updateDateUI();
+    loadData();
+  }
+
+  async function loadData() {
+    const content = document.getElementById('content');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    refreshBtn.classList.add('spinning');
+    content.innerHTML = '<div class="loading"><div class="loading-dots"><span></span><span></span><span></span></div></div>';
+
+    resetSummary();
+
+    try {
+      const dateStr = formatDateISO(currentDate);
+
+      const response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filter: {
+            and: [
+              {
+                property: 'Fecha',
+                date: { equals: dateStr }
+              }
+            ]
+          },
+          sorts: [{ property: 'Fecha', direction: 'ascending' }]
+        })
+      });
+
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+
+      const data = await response.json();
+      allEntries = data.results || [];
+      renderEntries(allEntries);
+
+    } catch (err) {
+      content.innerHTML = `<div class="error-msg">Error al cargar datos: ${err.message}</div>`;
+    } finally {
+      refreshBtn.classList.remove('spinning');
+    }
+  }
+
+  function resetSummary() {
+    document.getElementById('totalCal').textContent = '0';
+    document.getElementById('totalProt').textContent = '0';
+    document.getElementById('totalCarb').textContent = '0';
+    document.getElementById('totalFat').textContent = '0';
+    document.getElementById('protBar').style.width = '0%';
+    document.getElementById('carbBar').style.width = '0%';
+    document.getElementById('fatBar').style.width = '0%';
+    document.getElementById('entryCount').textContent = '0';
+  }
+
+  function getProp(props, name) {
+    const p = props[name];
+    if (!p) return 0;
+    if (p.type === 'number') return p.number || 0;
+    if (p.type === 'title') return p.title?.[0]?.plain_text || '';
+    if (p.type === 'rich_text') return p.rich_text?.[0]?.plain_text || '';
+    if (p.type === 'date') return p.date?.start || '';
+    return 0;
+  }
+
+  function renderEntries(entries) {
+    const content = document.getElementById('content');
+
+    if (!entries.length) {
+      content.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">🍽️</div>
+          <div class="empty-text">Sin registros para este día</div>
+        </div>`;
+      return;
+    }
+
+    let totalCal = 0, totalProt = 0, totalCarb = 0, totalFat = 0;
+
+    const cards = entries.map(entry => {
+      const props = entry.properties;
+      const name = getProp(props, 'Concepto') || 'Sin nombre';
+      const cal = getProp(props, 'Calorías') || getProp(props, 'Calorias') || 0;
+      const prot = getProp(props, 'Proteínas') || getProp(props, 'Proteinas') || 0;
+      const carb = getProp(props, 'Carbohidratos') || 0;
+      const fat = getProp(props, 'Grasas') || 0;
+      const fecha = getProp(props, 'Fecha');
+
+      totalCal += cal;
+      totalProt += prot;
+      totalCarb += carb;
+      totalFat += fat;
+
+      const time = fecha ? new Date(fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+
+      return `
+        <div class="entry-card">
+          <div class="entry-left">
+            <div class="entry-name">${name}</div>
+            <div class="entry-macros-row">
+              <div class="entry-macro p"><span>${prot}g</span> prot</div>
+              <div class="entry-macro c"><span>${carb}g</span> carbs</div>
+              <div class="entry-macro f"><span>${fat}g</span> grasas</div>
+            </div>
+            ${time ? `<div class="entry-time">${time}</div>` : ''}
+          </div>
+          <div class="entry-cal">
+            <div class="entry-cal-number">${cal}</div>
+            <div class="entry-cal-label">kcal</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    content.innerHTML = cards;
+    document.getElementById('entryCount').textContent = entries.length;
+
+    // Animate totals
+    animateNumber('totalCal', totalCal);
+    animateNumber('totalProt', Math.round(totalProt * 10) / 10);
+    animateNumber('totalCarb', Math.round(totalCarb * 10) / 10);
+    animateNumber('totalFat', Math.round(totalFat * 10) / 10);
+
+    // Bars (based on daily targets: 2000 kcal, 150g prot, 250g carb, 65g fat)
+    setTimeout(() => {
+      document.getElementById('protBar').style.width = Math.min(100, (totalProt / 150) * 100) + '%';
+      document.getElementById('carbBar').style.width = Math.min(100, (totalCarb / 250) * 100) + '%';
+      document.getElementById('fatBar').style.width = Math.min(100, (totalFat / 65) * 100) + '%';
+    }, 100);
+  }
+
+  function animateNumber(id, target) {
+    const el = document.getElementById(id);
+    const start = 0;
+    const duration = 600;
+    const startTime = performance.now();
+
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = start + (target - start) * eased;
+      el.textContent = Number.isInteger(target) ? Math.round(current) : (Math.round(current * 10) / 10);
+      if (progress < 1) requestAnimationFrame(update);
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  // Init
+  updateDateUI();
+  loadData();
+</script>
+</body>
+</html>
