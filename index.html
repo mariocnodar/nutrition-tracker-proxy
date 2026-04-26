@@ -509,10 +509,16 @@
       if (s.sex) document.getElementById('s-sex').value = s.sex;
       if (s.activity) document.getElementById('s-activity').value = s.activity;
       if (s.goal) document.getElementById('s-goal').value = s.goal;
-      if (s.manualCal) document.getElementById('s-manual-cal').value = s.manualCal;
       if (s.basal) { document.getElementById('s-basal').value = s.basal; basal = s.basal; }
-      if (s.goals) goals = s.goals;
       if (s.weeklyHistory) weeklyHistory = s.weeklyHistory;
+      // Restore goals — manualCal takes priority
+      if (s.manualCal) {
+        document.getElementById('s-manual-cal').value = s.manualCal;
+        goals = s.goals || { cal: s.manualCal, prot: 0, carb: 0, fat: 0 };
+        goals.cal = s.manualCal; // always enforce manual cal
+      } else if (s.goals) {
+        goals = s.goals;
+      }
     } catch(e) {}
   }
 
@@ -961,8 +967,9 @@
   function renderCalendar(year, month, daysInMonth, ingestedByDay, burnedByDay) {
     const grid = document.getElementById('calGrid');
     const todayISO = formatDateISO(new Date());
-    const firstDayOfWeek = new Date(year, month, 1).getDay();
-    const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    // getDay(): 0=Sun,1=Mon,...,6=Sat. We want Mon=0,Tue=1,...,Sun=6
+    const firstDayJS = new Date(year, month, 1).getDay(); // 0=Sun
+    const offset = firstDayJS === 0 ? 6 : firstDayJS - 1; // Mon-based offset
 
     let html = '';
     for (let i = 0; i < offset; i++) html += '<div class="cal-day empty"></div>';
@@ -1058,7 +1065,9 @@
   // ===== INIT =====
   calMonth = new Date();
   loadSettings();
-  recalcGoals();
+  // Only recalc if no manual cal set and body data exists
+  const _s = JSON.parse(localStorage.getItem('nutrition_settings') || '{}');
+  if (!_s.manualCal && _s.weight && _s.height && _s.age) recalcGoals();
   updateDateUI();
   updateWeekUI();
   updateCalMonthUI();
