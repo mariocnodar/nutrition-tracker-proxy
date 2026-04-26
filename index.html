@@ -131,7 +131,7 @@
     .cal-nav { display: flex; align-items: center; padding: 14px 20px 12px; background: var(--surface); gap: 10px; border-bottom: 1px solid var(--border); }
     .cal-month { flex: 1; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
 
-    .calendar-wrap { padding: 16px 20px; }
+    .calendar-wrap { padding: 16px 20px 8px; }
 
     .cal-weekdays {
       display: grid; grid-template-columns: repeat(7, 1fr);
@@ -415,6 +415,14 @@
       </div>
     </div>
 
+    <div class="settings-section">
+      <div class="settings-section-title">Metabolismo basal (para déficit real)</div>
+      <div class="settings-row">
+        <div class="settings-row-label">Basal diario<div class="settings-row-sub">kcal quemadas en reposo</div></div>
+        <input class="settings-input" type="number" id="s-basal" placeholder="1800" oninput="saveBasal()">
+      </div>
+    </div>
+
     <button class="save-btn" onclick="saveSettings()">Guardar objetivos</button>
     <div class="save-confirm" id="saveConfirm">✓ Objetivos guardados</div>
   </div>
@@ -427,8 +435,9 @@
   let currentWeekOffset = 0;
   let calMonth = new Date();
   let goals = { cal: 0, prot: 0, carb: 0, fat: 0 };
-  let calDayData = {}; // iso -> { cal, burned }
-  let weeklyHistory = {}; // 'YYYY-WW' -> deficit
+  let basal = 0;
+  let calDayData = {};
+  let weeklyHistory = {};
 
   // ===== UTILS =====
   function formatDateISO(date) { return date.toISOString().split('T')[0]; }
@@ -501,15 +510,22 @@
       if (s.activity) document.getElementById('s-activity').value = s.activity;
       if (s.goal) document.getElementById('s-goal').value = s.goal;
       if (s.manualCal) document.getElementById('s-manual-cal').value = s.manualCal;
+      if (s.basal) { document.getElementById('s-basal').value = s.basal; basal = s.basal; }
       if (s.goals) goals = s.goals;
       if (s.weeklyHistory) weeklyHistory = s.weeklyHistory;
     } catch(e) {}
   }
 
+  function saveBasal() {
+    basal = parseFloat(document.getElementById('s-basal').value) || 0;
+  }
+
   function saveSettings() {
     const s = getSettingsValues();
     s.goals = goals;
+    s.basal = parseFloat(document.getElementById('s-basal').value) || 0;
     s.weeklyHistory = weeklyHistory;
+    basal = s.basal;
     localStorage.setItem('nutrition_settings', JSON.stringify(s));
     const c = document.getElementById('saveConfirm');
     c.style.display = 'block';
@@ -855,69 +871,95 @@
     const month = calMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
+    const dateFilter = {
+      and: [
+        { property: 'Fecha', date: { on_or_after: formatDateISO(firstDay) } },
+        { property: 'Fecha', date: { on_or_before: formatDateISO(lastDay) } }
+      ]
+    };
 
     try {
-      const res = await fetch(PROXY_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filter: { and: [
-            { property: 'Fecha', date: { on_or_after: formatDateISO(firstDay) } },
-            { property: 'Fecha', date: { on_or_before: formatDateISO(lastDay) } }
-          ]}
+      const [nutritionRes, sportRes] = await Promise.all([
+        fetch(PROXY_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ db: 'nutrition', filter: dateFilter })
+        }),
+        fetch(PROXY_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ db: 'sport', filter: dateFilter })
         })
-      });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data = await res.json();
-      processCalendarData(data.results || [], year, month, lastDay.getDate());
+      ]);
+
+      const nutritionData = await nutritionRes.json();
+      const sportData = await sportRes.json();
+      processCalendarData(nutritionData.results || [], sportData.results || [], year, month, lastDay.getDate());
     } catch (err) {
       document.getElementById('calGrid').innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
     } finally { btn.classList.remove('spinning'); }
   }
 
-  function processCalendarData(entries, year, month, daysInMonth) {
-    const byDay = {};
-    entries.forEach(e => {
+  function processCalendarData(nutritionEntries, sportEntries, year, month, daysInMonth) {
+    // Nutrition: calories ingested per day
+    const ingestedByDay = {};
+    nutritionEntries.forEach(e => {
+      const fecha = getProp(e.properties, 'Fecha');
+      const key = fecha ? fecha.split('T')[0] : null;
+      if (key) {
+        if (!ingestedByDay[key]) ingestedByDay[key] = 0;
+        ingestedByDay[key] += getCal(e.properties);
+      }
+    });
+
+    // Sport: calories burned per day
+    const burnedByDay = {};
+    sportEntries.forEach(e => {
       const p = e.properties;
       const fecha = getProp(p, 'Fecha');
       const key = fecha ? fecha.split('T')[0] : null;
       if (key) {
-        if (!byDay[key]) byDay[key] = 0;
-        byDay[key] += getCal(p);
+        if (!burnedByDay[key]) burnedByDay[key] = 0;
+        // Find burned calories field
+        const keys = Object.keys(p);
+        for (const k of keys) {
+          if (k.toLowerCase().includes('calor') && p[k].type === 'number') {
+            burnedByDay[key] += p[k].number || 0;
+            break;
+          }
+        }
       }
     });
 
-    calDayData = byDay;
-    renderCalendar(year, month, daysInMonth, byDay);
-    renderWeeklyDeficit(year, month, byDay);
+    calDayData = { ingestedByDay, burnedByDay };
+    renderCalendar(year, month, daysInMonth, ingestedByDay, burnedByDay);
+    renderWeeklyDeficit(year, month, ingestedByDay, burnedByDay);
   }
 
-  function renderCalendar(year, month, daysInMonth, byDay) {
+  function renderCalendar(year, month, daysInMonth, ingestedByDay, burnedByDay) {
     const grid = document.getElementById('calGrid');
     const todayISO = formatDateISO(new Date());
     const firstDayOfWeek = new Date(year, month, 1).getDay();
     const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
     let html = '';
-
-    // Empty cells
-    for (let i = 0; i < offset; i++) {
-      html += '<div class="cal-day empty"></div>';
-    }
+    for (let i = 0; i < offset; i++) html += '<div class="cal-day empty"></div>';
 
     for (let d = 1; d <= daysInMonth; d++) {
       const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const cal = byDay[iso] || 0;
+      const ingested = ingestedByDay[iso] || 0;
+      const burned = burnedByDay[iso] || 0;
       const isT = iso === todayISO;
       const isFuture = iso > todayISO;
 
       let cls = 'cal-day';
       let dot = '';
 
-      if (!isFuture && cal > 0 && goals.cal) {
-        const deficit = goals.cal - Math.round(cal);
+      if (!isFuture && ingested > 0 && goals.cal) {
+        // Total calories out = basal + sport burned
+        const totalOut = (basal || goals.cal) + burned;
+        const deficit = totalOut - Math.round(ingested);
         if (deficit >= 0) { cls += ' deficit-day'; dot = '<div class="cal-day-dot"></div>'; }
         else { cls += ' surplus-day'; dot = '<div class="cal-day-dot"></div>'; }
-      } else if (!isFuture && cal > 0) {
+      } else if (!isFuture && ingested > 0) {
         cls += ' no-data';
         dot = '<div class="cal-day-dot"></div>';
       }
@@ -925,47 +967,46 @@
       if (isT) cls += ' today';
 
       html += `<div class="${cls}" onclick="goToDay('${iso}')">
-        <div class="cal-day-num">${d}</div>
-        ${dot}
+        <div class="cal-day-num">${d}</div>${dot}
       </div>`;
     }
 
     grid.innerHTML = html;
   }
 
-  function renderWeeklyDeficit(year, month, byDay) {
-    if (!goals.cal) {
+  function renderWeeklyDeficit(year, month, ingestedByDay, burnedByDay) {
+    if (!goals.cal && !basal) {
       document.getElementById('weekly-deficit-wrap').innerHTML = `
         <div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">Configura tu objetivo en Ajustes</div></div>`;
       return;
     }
 
-    // Group by week
     const weeks = {};
-    Object.entries(byDay).forEach(([iso, cal]) => {
+    Object.entries(ingestedByDay).forEach(([iso, ingested]) => {
       const wk = getWeekKey(new Date(iso));
-      if (!weeks[wk]) weeks[wk] = { total: 0, days: 0 };
-      weeks[wk].total += cal;
+      if (!weeks[wk]) weeks[wk] = { ingested: 0, burned: 0, days: 0 };
+      weeks[wk].ingested += ingested;
+      weeks[wk].burned += burnedByDay[iso] || 0;
       weeks[wk].days++;
     });
 
-    // Current week deficit
     const currentWeekKey = getWeekKey(new Date());
     const currentWkData = weeks[currentWeekKey];
     let currentWeekDeficit = 0;
+
     if (currentWkData) {
-      currentWeekDeficit = (goals.cal * currentWkData.days) - Math.round(currentWkData.total);
+      const totalOut = ((basal || goals.cal) * currentWkData.days) + currentWkData.burned;
+      currentWeekDeficit = Math.round(totalOut - currentWkData.ingested);
     }
 
-    // Historical weeks (last 8)
     const sortedWeeks = Object.entries(weeks).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 8);
 
     const weeksHTML = sortedWeeks.map(([wk, data]) => {
-      const deficit = (goals.cal * data.days) - Math.round(data.total);
+      const totalOut = ((basal || goals.cal) * data.days) + data.burned;
+      const deficit = Math.round(totalOut - data.ingested);
       const isCurrent = wk === currentWeekKey;
-      const label = isCurrent ? 'Esta semana' : wk;
       return `<div class="wd-week-row">
-        <div class="wd-week-label">${label} (${data.days}d)</div>
+        <div class="wd-week-label">${isCurrent ? 'Esta semana' : wk} (${data.days}d)</div>
         <div class="wd-week-val ${deficit >= 0 ? 'd' : 's'}">${deficit >= 0 ? '↓' : '↑'} ${Math.abs(deficit)} kcal</div>
       </div>`;
     }).join('');
@@ -977,7 +1018,7 @@
           <div class="wd-value ${currentWeekDeficit >= 0 ? 'deficit' : 'surplus'}">
             ${currentWeekDeficit >= 0 ? '↓' : '↑'} ${Math.abs(currentWeekDeficit)} kcal
           </div>
-          <div class="wd-sublabel">${currentWkData ? currentWkData.days : 0} días registrados</div>
+          <div class="wd-sublabel">${currentWkData ? currentWkData.days : 0} días · basal ${basal || goals.cal} kcal/día</div>
         </div>
         <div class="wd-weeks">${weeksHTML}</div>
       </div>`;
